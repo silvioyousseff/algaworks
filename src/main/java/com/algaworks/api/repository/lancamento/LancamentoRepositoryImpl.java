@@ -43,7 +43,7 @@ public class LancamentoRepositoryImpl implements LancamentoRepositoryQuery {
 
 		List<Lancamento> resultList = query.getResultList();
 
-		return new PageImpl<>(resultList, pageable, resultList.size());
+		return new PageImpl<Lancamento>(resultList, pageable, resultList.size());
 	}
 
 	@Override
