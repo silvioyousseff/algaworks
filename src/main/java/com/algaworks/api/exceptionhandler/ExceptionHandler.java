@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.algaworks.api.service.exception.LancamentoNullException;
 import com.algaworks.api.service.exception.PessoaInativaException;
 import com.algaworks.api.service.exception.PessoaNullException;
 
@@ -93,6 +94,17 @@ public class ExceptionHandler extends ResponseEntityExceptionHandler {
 						ExceptionUtils.getRootCauseMessage(ex)));
 
 		return handleExceptionInternal(ex, listaErros, new HttpHeaders(), HttpStatus.NOT_FOUND, request);
+	}
+	
+	@org.springframework.web.bind.annotation.ExceptionHandler({ LancamentoNullException.class })
+	public ResponseEntity<Object> handleLancamentoNullException(LancamentoNullException ex,
+			WebRequest request) {
+
+		List<Erro> listaErros = Arrays.asList(
+				new Erro(messageSource.getMessage("recurso.lancamento.nao.encontrado", null, LocaleContextHolder.getLocale()),
+						ExceptionUtils.getRootCauseMessage(ex)));
+
+		return handleExceptionInternal(ex, listaErros, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
 	}
 	
 	public List<Erro> criarListaErros(BindingResult bindingResult) {
