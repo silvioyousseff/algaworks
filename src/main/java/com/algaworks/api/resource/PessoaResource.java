@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algaworks.api.event.RecursoCriadoEvent;
 import com.algaworks.api.model.Pessoa;
 import com.algaworks.api.repository.PessoaRepository;
-import com.algaworks.api.repository.filter.PessoaFilter;
 import com.algaworks.api.service.PessoaService;
 
 @RestController
@@ -40,50 +40,45 @@ public class PessoaResource {
 	private ApplicationEventPublisher publisher;
 
 	
-	@GetMapping("/listar")
-	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_PESSOA') and #oauth2.hasScope('read')")
-	public Page<Pessoa> listar(PessoaFilter filtro, Pageable pageable) {
-		return pessoaRepository.listar(filtro, pageable);
-	}
-
-	@PostMapping("/salvar")
+	@PostMapping
 	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_PESSOA') and #oauth2.hasScope('write')")
-	public ResponseEntity<Pessoa> salvar(@Valid @RequestBody Pessoa pessoa, HttpServletResponse response) {
-		Pessoa save = pessoaRepository.save(pessoa);
-
-		publisher.publishEvent(new RecursoCriadoEvent(this, response, save.getId()));
-
-		return ResponseEntity.status(HttpStatus.CREATED).body(save);
+	public ResponseEntity<Pessoa> criar(@Valid @RequestBody Pessoa pessoa, HttpServletResponse response) {
+		Pessoa pessoaSalva = pessoaRepository.save(pessoa);
+		publisher.publishEvent(new RecursoCriadoEvent(this, response, pessoaSalva.getId()));
+		return ResponseEntity.status(HttpStatus.CREATED).body(pessoaSalva);
 	}
 
-	@GetMapping("buscar/{id}")
+	@GetMapping("/{id}")
 	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_PESSOA') and #oauth2.hasScope('read')")
-	public ResponseEntity<Pessoa> buscar(@PathVariable Long id) {
-		Pessoa pessoa = pessoaRepository.findOne(id);
-
+	public ResponseEntity<Pessoa> buscarPeloCodigo(@PathVariable Long codigo) {
+		Pessoa pessoa = pessoaRepository.findOne(codigo);
 		return pessoa != null ? ResponseEntity.ok(pessoa) : ResponseEntity.notFound().build();
 	}
-
-	@DeleteMapping("excluir/{id}")
+	
+	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	@PreAuthorize("hasAuthority('ROLE_REMOVER_PESSOA') and #oauth2.hasScope('read')")
-	public void excluir(@PathVariable Long id) {
-		pessoaRepository.delete(id);
+	@PreAuthorize("hasAuthority('ROLE_REMOVER_PESSOA') and #oauth2.hasScope('write')")
+	public void remover(@PathVariable Long codigo) {
+		pessoaRepository.delete(codigo);
 	}
-
-	@PutMapping("atualizar/{id}")
+	
+	@PutMapping("/{id}")
 	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_PESSOA') and #oauth2.hasScope('write')")
-	public ResponseEntity<Pessoa> atualizar(@PathVariable Long id, @Valid @RequestBody Pessoa pessoa) {
-
-		Pessoa pessoaBd = pessoaService.atualizar(id, pessoa);
-
-		return ResponseEntity.ok(pessoaBd);
+	public ResponseEntity<Pessoa> atualizar(@PathVariable Long codigo, @Valid @RequestBody Pessoa pessoa) {
+		Pessoa pessoaSalva = pessoaService.atualizar(codigo, pessoa);
+		return ResponseEntity.ok(pessoaSalva);
 	}
-
-	@PutMapping("atualizar/{id}/ativo")
-	@ResponseStatus(HttpStatus.OK)
+	
+	@PutMapping("/{id}/ativo")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_PESSOA') and #oauth2.hasScope('write')")
-	public void atualizarAtivo(@PathVariable Long id, @Valid @RequestBody Boolean ativo) {
-		pessoaService.atualizarAtivo(id, ativo);
+	public void atualizarPropriedadeAtivo(@PathVariable Long codigo, @RequestBody Boolean ativo) {
+		pessoaService.atualizarAtivo(codigo, ativo);
+	}
+	
+	@GetMapping
+	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_PESSOA')")
+	public Page<Pessoa> pesquisar(@RequestParam(required = false, defaultValue = "%") String nome, Pageable pageable) {
+		return pessoaRepository.findByNomeContaining(nome, pageable);
 	}
 }

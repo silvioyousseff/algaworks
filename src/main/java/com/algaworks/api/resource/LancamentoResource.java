@@ -10,7 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,30 +40,19 @@ public class LancamentoResource {
 	@Autowired
 	private ApplicationEventPublisher publisher;
 
-	@PutMapping("atualizar/{id}")
-	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_LANCAMENTO') and #oauth2.hasScope('write')")
-	public ResponseEntity<Lancamento> atualizar(@PathVariable Long id, @Valid @RequestBody Lancamento lancamento) {
-
-		Lancamento lancamentBd = lancamentoService.atualizar(id, lancamento);
-
-		return ResponseEntity.ok(lancamentBd);
-	}
-	
-	@CrossOrigin
-	@GetMapping("/listar")
+	@GetMapping
 	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_LANCAMENTO') and #oauth2.hasScope('read')")
 	public Page<Lancamento> listar(LancamentoFilter filtro, Pageable pageable) {
 		return lancamentoRepository.listar(filtro, pageable);
 	}
 
-	@CrossOrigin
-	@GetMapping("/listarResumo")
+	@GetMapping(params = "resumo")
 	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_LANCAMENTO') and #oauth2.hasScope('read')")
 	public Page<ResumoLancamento> listarResumo(LancamentoFilter filtro, Pageable pageable) {
 		return lancamentoRepository.resumir(filtro, pageable);
 	}
 
-	@GetMapping("buscar/{id}")
+	@GetMapping("/{id}")
 	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_LANCAMENTO') and #oauth2.hasScope('read')")
 	public ResponseEntity<Lancamento> buscar(@PathVariable Long id) {
 		Lancamento lancamento = lancamentoRepository.findOne(id);
@@ -72,20 +60,29 @@ public class LancamentoResource {
 		return lancamento != null ? ResponseEntity.ok(lancamento) : ResponseEntity.notFound().build();
 	}
 
-	@PostMapping("/salvar")
+	@PostMapping
 	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_LANCAMENTO') and #oauth2.hasScope('write')")
-	public ResponseEntity<Lancamento> salvar(@Valid @RequestBody Lancamento lancamento, HttpServletResponse response) {
+	public ResponseEntity<Lancamento> criar(@Valid @RequestBody Lancamento lancamento, HttpServletResponse response) {
 		Lancamento save = lancamentoService.salvar(lancamento);
 
 		publisher.publishEvent(new RecursoCriadoEvent(this, response, save.getId()));
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(save);
 	}
+	
+	@PutMapping("/{id}")
+	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_LANCAMENTO')")
+	public ResponseEntity<Lancamento> atualizar(@PathVariable Long id, @Valid @RequestBody Lancamento lancamento) {
 
-	@DeleteMapping("excluir/{id}")
-	@PreAuthorize("hasAuthority('ROLE_REMOVER_LANCAMENTO') and #oauth2.hasScope('write')")
+		Lancamento lancamentBd = lancamentoService.atualizar(id, lancamento);
+
+		return ResponseEntity.ok(lancamentBd);
+	}
+
+	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public void excluir(@PathVariable Long id) {
-		lancamentoRepository.delete(id);
+	@PreAuthorize("hasAuthority('ROLE_REMOVER_LANCAMENTO') and #oauth2.hasScope('write')")
+	public void remover(@PathVariable Long codigo) {
+		lancamentoRepository.delete(codigo);
 	}
 }

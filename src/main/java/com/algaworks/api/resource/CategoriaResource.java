@@ -31,13 +31,13 @@ public class CategoriaResource {
 	@Autowired
 	private ApplicationEventPublisher publisher;
 	
-	@GetMapping("/listar")
+	@GetMapping
 	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_CATEGORIA') and #oauth2.hasScope('read')")
 	public List<Categoria> listar() {
 		return categoriaRepository.findAll();
 	}
 
-	@PostMapping("/salvar")
+	@PostMapping
 	@PreAuthorize("hasAuthority('ROLE_CADASTRAR_CATEGORIA') and #oauth2.hasScope('write')")
 	public ResponseEntity<Categoria> salvar(@Valid @RequestBody Categoria categoria, HttpServletResponse response) {
 		Categoria save = categoriaRepository.save(categoria);
@@ -47,7 +47,7 @@ public class CategoriaResource {
 		return ResponseEntity.status(HttpStatus.CREATED).body(save);
 	}
 
-	@GetMapping("buscar/{id}")
+	@GetMapping("/{id}")
 	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_CATEGORIA') and #oauth2.hasScope('read')")
 	public ResponseEntity<Categoria> buscar(@PathVariable Long id) {
 		Categoria categoria = categoriaRepository.findOne(id);
