@@ -33,9 +33,8 @@ public class LancamentoRepositoryImpl implements LancamentoRepositoryQuery {
 		CriteriaQuery<Lancamento> criteria = builder.createQuery(Lancamento.class);
 		Root<Lancamento> root = criteria.from(Lancamento.class);
 
-		List<Predicate> predicates = predicatesLancamento(filtro, builder, root);
-
-		criteria.where(predicates.toArray(new Predicate[predicates.size()]));
+		Predicate[] predicates = predicatesLancamento(filtro, builder, root);
+		criteria.where(predicates);
 
 		TypedQuery<Lancamento> query = manager.createQuery(criteria);
 
@@ -43,7 +42,7 @@ public class LancamentoRepositoryImpl implements LancamentoRepositoryQuery {
 
 		List<Lancamento> resultList = query.getResultList();
 
-		return new PageImpl<Lancamento>(resultList, pageable, resultList.size());
+		return new PageImpl<Lancamento>(resultList, pageable, total(filtro));
 	}
 
 	@Override
@@ -57,9 +56,8 @@ public class LancamentoRepositoryImpl implements LancamentoRepositoryQuery {
 				root.get(Lancamento_.dataPagamento), root.get(Lancamento_.valor), root.get(Lancamento_.tipo),
 				root.get(Lancamento_.categoria).get(Categoria_.nome), root.get(Lancamento_.pessoa).get(Pessoa_.nome)));
 
-		List<Predicate> predicates = predicatesLancamento(filtro, builder, root);
-
-		criteria.where(predicates.toArray(new Predicate[predicates.size()]));
+		Predicate[] predicates = predicatesLancamento(filtro, builder, root);
+		criteria.where(predicates);
 
 		TypedQuery<ResumoLancamento> query = manager.createQuery(criteria);
 
@@ -67,11 +65,10 @@ public class LancamentoRepositoryImpl implements LancamentoRepositoryQuery {
 
 		List<ResumoLancamento> resultList = query.getResultList();
 
-		return new PageImpl<>(resultList, pageable, resultList.size());
+		return new PageImpl<>(resultList, pageable, total(filtro));
 	}
 
-	private List<Predicate> predicatesLancamento(LancamentoFilter filtro, CriteriaBuilder builder,
-			Root<Lancamento> root) {
+	private Predicate[] predicatesLancamento(LancamentoFilter filtro, CriteriaBuilder builder, Root<Lancamento> root) {
 
 		List<Predicate> predicates = new ArrayList<Predicate>();
 
@@ -88,7 +85,7 @@ public class LancamentoRepositoryImpl implements LancamentoRepositoryQuery {
 			predicates.add(builder.lessThanOrEqualTo(root.get(Lancamento_.dataVencimento), filtro.getDataInicio()));
 		}
 
-		return predicates;
+		return predicates.toArray(new Predicate[predicates.size()]);
 	}
 
 	private void paginacao(TypedQuery<?> query, Pageable pageable) {
@@ -98,5 +95,17 @@ public class LancamentoRepositoryImpl implements LancamentoRepositoryQuery {
 
 		query.setFirstResult(registroInicial);
 		query.setMaxResults(totalPorPagina);
+	}
+
+	private Long total(LancamentoFilter lancamentoFilter) {
+		CriteriaBuilder builder = manager.getCriteriaBuilder();
+		CriteriaQuery<Long> criteria = builder.createQuery(Long.class);
+		Root<Lancamento> root = criteria.from(Lancamento.class);
+
+		Predicate[] predicates = predicatesLancamento(lancamentoFilter, builder, root);
+		criteria.where(predicates);
+
+		criteria.select(builder.count(root));
+		return manager.createQuery(criteria).getSingleResult();
 	}
 }

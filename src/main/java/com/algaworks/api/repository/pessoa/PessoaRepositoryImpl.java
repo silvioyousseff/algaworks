@@ -30,9 +30,8 @@ public class PessoaRepositoryImpl implements PessoaRepositoryQuery{
 		CriteriaQuery<Pessoa> criteria = builder.createQuery(Pessoa.class);
 		Root<Pessoa> root = criteria.from(Pessoa.class);
 		
-		List<Predicate> predicates = predicatesPessoa(filtro, builder, root);
-		
-		criteria.where(predicates.toArray(new Predicate[predicates.size()]));
+		Predicate[] predicates = predicatesPessoa(filtro, builder, root);
+		criteria.where(predicates);
 		
 		TypedQuery<Pessoa> query = manager.createQuery(criteria);
 		
@@ -40,7 +39,7 @@ public class PessoaRepositoryImpl implements PessoaRepositoryQuery{
 		
 		List<Pessoa> resultList = query.getResultList();
 		
-		return new PageImpl<Pessoa>(resultList, pageable, resultList.size());
+		return new PageImpl<Pessoa>(resultList, pageable, total(filtro));
 	}
 
 	private void paginacao(TypedQuery<Pessoa> query, Pageable pageable) {
@@ -52,7 +51,7 @@ public class PessoaRepositoryImpl implements PessoaRepositoryQuery{
 		query.setMaxResults(totalPorPagina);
 	}
 
-	private List<Predicate> predicatesPessoa(PessoaFilter filtro, CriteriaBuilder builder, Root<Pessoa> root) {
+	private Predicate[] predicatesPessoa(PessoaFilter filtro, CriteriaBuilder builder, Root<Pessoa> root) {
 		List<Predicate> predicates = new ArrayList<Predicate>();
 		
 		if (filtro.getNome() != null) {
@@ -60,7 +59,19 @@ public class PessoaRepositoryImpl implements PessoaRepositoryQuery{
 					"%" + filtro.getNome().toLowerCase() + "%"));
 		}
 		
-		return predicates;
+		return predicates.toArray(new Predicate[predicates.size()]);
 	}
 
+	private Long total(PessoaFilter filtro) {
+		CriteriaBuilder builder = manager.getCriteriaBuilder();
+		CriteriaQuery<Long> criteria = builder.createQuery(Long.class);
+		Root<Pessoa> root = criteria.from(Pessoa.class);
+
+		Predicate[] predicates = predicatesPessoa(filtro, builder, root);
+		criteria.where(predicates);
+
+		criteria.select(builder.count(root));
+		return manager.createQuery(criteria).getSingleResult();
+	}
+	
 }
