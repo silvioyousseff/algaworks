@@ -82,7 +82,7 @@ public class LancamentoResource {
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@PreAuthorize("hasAuthority('ROLE_REMOVER_LANCAMENTO') and #oauth2.hasScope('write')")
-	public void remover(@PathVariable Long codigo) {
-		lancamentoRepository.delete(codigo);
+	public void remover(@PathVariable Long id) {
+		lancamentoRepository.delete(id);
 	}
 }
