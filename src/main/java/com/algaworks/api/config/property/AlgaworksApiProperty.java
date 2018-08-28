@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("algaworks")
 public class AlgaworksApiProperty {
 
-	private String originPermitida = "http://localhost:4200";
+	private String originPermitida = "https://yousseff-algaworks-angular.herokuapp.com";
 	
 	private final Seguranca seguranca = new Seguranca();
 
